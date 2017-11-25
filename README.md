@@ -11,6 +11,11 @@ asp.net core 2 app 学习
 
 
 
+### -- 2017-11-24 ------------------------ ###
+## CommandLineSample 控制台示例程序    
+. 通过Nuget安装 **Microsoft.AspNetCore**  注意Microsoft.AspNetCore 与  Micosoft.netCore.app(控制台app默认)    
+
+     
 
 
 
