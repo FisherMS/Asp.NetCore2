@@ -25,6 +25,9 @@ namespace OptionBindSample
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<Class>(Configuration); //注册配置文件与对应的类
+
+            services.AddMvc(); //注册Mvc模块
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -35,22 +38,26 @@ namespace OptionBindSample
                 app.UseDeveloperExceptionPage();
             }
 
-            app.Run(async (context) =>
-            {
+            //使用MVC的路由模块
+            app.UseMvcWithDefaultRoute();
 
-                //  Bind读取默认配置appsettings.json到C#实例 
 
-                var cls = new Class();
-                Configuration.Bind(cls);
+            //app.Run(async (context) =>
+            //{
 
-                //await context.Response.WriteAsync("Hello World!");
-                await context.Response.WriteAsync($"{cls.ClassNo}");
-                await context.Response.WriteAsync($"{cls.ClassDesc}");
+            //    //  Bind读取默认配置appsettings.json到C#实例 
 
-                await context.Response.WriteAsync($"{cls.Students.Count}");
-               
-                //await context.Response.WriteAsync("Hello World!");
-            });
+            //    var cls = new Class();
+            //    Configuration.Bind(cls);
+
+            //    //await context.Response.WriteAsync("Hello World!");
+            //    await context.Response.WriteAsync($"{cls.ClassNo}");
+            //    await context.Response.WriteAsync($"{cls.ClassDesc}");
+
+            //    await context.Response.WriteAsync($"{cls.Students.Count}");
+
+            //    //await context.Response.WriteAsync("Hello World!");
+            //});
         }
     }
 }

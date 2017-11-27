@@ -1,0 +1,18 @@
+﻿@model OptionBindSample.Class
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h2>Index</h2>
+
+<h4>ClassNo:@Model.ClassNo</h4>
+<h4>ClassDesc:@Model.ClassDesc</h4>
+
+<h3>Students:</h3>
+<div>
+    @foreach (var student in Model.Students)
+    {
+        <span>Name:@student.Name</span>
+        <span>Age:@student.Age</span>
+    }
+</div>

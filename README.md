@@ -38,4 +38,10 @@ asp.net core 2 app 学习
 .  Configuration.Bind() 把对像与配置进行绑定。    
 . 根止录下的appsettings.json会自动读取到。    
 
+## 在Core Mvc中使用Options方式 示例：OptionBindSample ## 
+. 注掉上一节中的app.run代码块，否则就一直会显示这个运行里的内容。    
+. `services.Configure<Class>(Configuration); //注册配置文件与对应的类` 这个注册一定要加上。   
+. 直接取得注入的结果可以在视图中直接调用：`@inject IOptions<OptionBindSample.Class> clsAccesser;`，调用时直接`@clsAccesser.Value.属性`即可。     
+
+
      
