@@ -11,15 +11,24 @@ asp.net core 2 app 学习
 
 
 
-### -- 2017-11-24 ------------------------ ###
+### -- 2017-11-27 ------------------------ ###
+
 ## CommandLineSample 控制台示例程序    
-. 通过Nuget安装 **Microsoft.AspNetCore**  注意Microsoft.AspNetCore 与  Micosoft.netCore.app(控制台app默认)    
+. 通过Nuget安装 **Microsoft.AspNetCore**  注意Microsoft.AspNetCore 与  Micosoft.netCore.app(控制台app默认)。      
+. 通过 `var builder = new ConfigurationBuilder().AddCommandLine(args);`读取命令行里的参数：`dotnet CommandLineSample.dll name=atwind age=100`。      
+. 从内存（即代码初始化配置）中加入配置集合`.AddInMemoryCollection(settings)`  按照AddMethodx的先后顺序，后面的配置会自动覆盖前面的配置。 
+          
+
+## Json文件配置 ## 
+
+
 
      
 
 
 
 ### -- 2017-11-24 ------------------------ ###
+
 ## dotnet new --help 显示出所有可用的项目模板
 用VS2017创建Model-Controller-View的MVC项目后。通过工具栏上的运行下拉框可选择不同的运行与调试模式。       
 . 可以通过工具栏的运行下拉上选择IISExpress进行运行。      
