@@ -19,6 +19,7 @@ namespace OptionBindSample
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration(cfg => { cfg.AddJsonFile("appsettings.json", false, false); }) //替换原CreateDefaultBuilder里的配置信息。
                 .UseStartup<Startup>()
                 .Build();
     }
