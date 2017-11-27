@@ -18,9 +18,9 @@ asp.net core 2 app 学习
 . 通过 `var builder = new ConfigurationBuilder().AddCommandLine(args);`读取命令行里的参数：`dotnet CommandLineSample.dll name=atwind age=100`。      
 . 从内存（即代码初始化配置）中加入配置集合`.AddInMemoryCollection(settings)`  按照AddMethodx的先后顺序，后面的配置会自动覆盖前面的配置。 
           
-
-## Json文件配置 ## 
-
+## 读取Json文件配置 ## 
+. 载入： `var builder = new ConfigurationBuilder().AddJsonFile("cfg.json");`。      
+. 读取： ` configuration["classNo"]   configuration["students:0:name"]  ` 集合:索引:属性。   
 
 
      
