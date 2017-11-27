@@ -30,7 +30,8 @@ namespace CommandLineSample
             Console.Write($"{configuration["students:2:name"]}");
             Console.WriteLine($"{configuration["students:2:age"]}");
 
-            
+
+
             ////默认的初始化参数
             //var settings = new Dictionary<string, string>(){{"name","atwind"},{"age","99"}};
 

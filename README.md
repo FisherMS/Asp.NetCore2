@@ -3,30 +3,6 @@ asp.net core 2 app 学习
 
 ------------------------------
 
-
-
-
-
-
-
-
-
-### -- 2017-11-27 ------------------------ ###
-
-## CommandLineSample 控制台示例程序    
-. 通过Nuget安装 **Microsoft.AspNetCore**  注意Microsoft.AspNetCore 与  Micosoft.netCore.app(控制台app默认)。      
-. 通过 `var builder = new ConfigurationBuilder().AddCommandLine(args);`读取命令行里的参数：`dotnet CommandLineSample.dll name=atwind age=100`。      
-. 从内存（即代码初始化配置）中加入配置集合`.AddInMemoryCollection(settings)`  按照AddMethodx的先后顺序，后面的配置会自动覆盖前面的配置。 
-          
-## 读取Json文件配置 ## 
-. 载入： `var builder = new ConfigurationBuilder().AddJsonFile("cfg.json");`。      
-. 读取： ` configuration["classNo"]   configuration["students:0:name"]  ` 集合:索引:属性。   
-
-
-     
-
-
-
 ### -- 2017-11-24 ------------------------ ###
 
 ## dotnet new --help 显示出所有可用的项目模板
@@ -45,3 +21,21 @@ asp.net core 2 app 学习
 . 如果发现配置好反向代理后，结果显示 **502 Bad Gateway** 可以用下面的命令 /usr/sbin/setsebool -P httpd_can_network_connect 1      [参考3](http://sysadminsjourney.com/content/2010/02/01/apache-modproxy-error-13permission-denied-error-rhel/)      
 
 
+### -- 2017-11-27 ------------------------ ###
+
+## CommandLineSample 控制台示例程序    
+. 通过Nuget安装 **Microsoft.AspNetCore**  注意Microsoft.AspNetCore 与  Micosoft.netCore.app(控制台app默认)。      
+. 通过 `var builder = new ConfigurationBuilder().AddCommandLine(args);`读取命令行里的参数：`dotnet CommandLineSample.dll name=atwind age=100`。      
+. 从内存（即代码初始化配置）中加入配置集合`.AddInMemoryCollection(settings)`  按照AddMethodx的先后顺序，后面的配置会自动覆盖前面的配置。 
+          
+## 读取Json文件配置 ## 
+. 载入： `var builder = new ConfigurationBuilder().AddJsonFile("cfg.json");`。      
+. 读取： ` configuration["classNo"]   configuration["students:0:name"]  ` 集合:索引:属性。   
+
+## Bind读取配置到C#实例 示例：OptionBindSample ## 
+. 新建OptionBindSample Web网站，选择空模板建立。   
+. 把Configuration加为属性。
+.  Configuration.Bind() 把对像与配置进行绑定。    
+. 根止录下的appsettings.json会自动读取到。    
+
+     
