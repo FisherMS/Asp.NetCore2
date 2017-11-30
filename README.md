@@ -48,6 +48,12 @@ asp.net core 2 app 学习
 . 在Program.cs中的代码`public static IWebHost BuildWebHost(string[] args) =>          WebHost.CreateDefaultBuilder(args)  ` 即为增加配置读取相关的代码，可以自已重写这个方法：`WebHost.CreateDefaultBuilder(args).ConfigureAppConfiguration(cfg => { cfg.AddJsonFile("appsettings.json", false, false); }) //替换原CreateDefaultBuilder里的配置信息。`      。    
 
 
+### -- 2017-11-28 ------------------------ ###     
+## DI初始化的源码解读 ##     
+. 查看实现的时候，不要查接口的定义，要找创建的实例（它继承了接口）这时才能看到具体的代码。    
+. 如何替换其它的Ioc容器Autofac。示例项目：**WebAPI1** 只需要把Startup类里面的 ConfigureService的 返回值从 void改为 IServiceProvider即可。而返回的则是一个AutoServiceProvider。      
+. 通过Nuget安装**Autofac.Extensions.DependencyInjection**和**Autofac**。      
+
 
 
 

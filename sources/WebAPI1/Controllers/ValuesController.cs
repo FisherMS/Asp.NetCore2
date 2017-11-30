@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI1.Controllers
 {
-    [Route("api/[controller]")]
+    /// <summary>
+    /// 将版本号直接增加到api后面
+    /// </summary>
+    [Route("api/v1/[controller]")]
     public class ValuesController : Controller
     {
         // GET api/values
