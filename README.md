@@ -55,7 +55,18 @@ asp.net core 2 app 学习
 . 通过Nuget安装**Autofac.Extensions.DependencyInjection**和**Autofac**。      
 
 
+### -- 2017-11-30 ------------------------ ###  
+## Docker 化  示例 WebApi ##
+. 在VS2017中右键项目-》添加-》Docker支持-》目标服务器选择Linux（因为我是在Hyper-v的虚拟机上安的Ubuntu）。这时会多一个Dockerfile文件，没有后缀，打开看看，是文本文件（就是个脚本）。       
+. 修改生成的默认Dockerfile文件内容。   [参考1](http://www.cnblogs.com/wangjieguang/p/docker-dotnetcore2.html)       。                  
+. `sudo docker build -t demo:v1 .　　//注意后边还有一个点呢，构建镜像`。     
+. `docker run -p 80:80 -e "ASPNETCORE_URLS=http://+:80" demo:v1` ，运行后就会提示你服务可用了。这时就能直接访问了。是不是很容易？      
 
 
 
      
+
+
+
+
+

@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  webapi1:
+    image: webapi1
+    build:
+      context: ./WebAPI1
+      dockerfile: Dockerfile
