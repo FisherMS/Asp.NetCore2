@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace WebApp1
+namespace webapp
 {
     public class Program
     {
@@ -18,7 +18,7 @@ namespace WebApp1
         }
 
         public static IWebHost BuildWebHost(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)            
+            WebHost.CreateDefaultBuilder(args) //是在 2.0 中新增的
                 .UseStartup<Startup>()
                 .Build();
     }
