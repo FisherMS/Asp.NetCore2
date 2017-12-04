@@ -136,6 +136,10 @@ public void ConfigureContainer(ContainerBuilder builder)
 >+  `Use`   是我们非常熟悉的注册中间件的方法，其实现非常简单，就是将注册的中间件保存到其内部属性 _components 中。                   
 >+ `Build` 在 Hosting 的启动中，便是通过该 Build 方法创建一个 RequestDelegate 类型的委托，Http Server 通过该委托来完成整个请求的响应。Build中首先定义了一个 404 的中间件。我们注册的第一个中间件A开始执行，A调用B，B则调用前面介绍的404 的中间件。              
 >+ `Run` 在我们注册的中间件中，是通过 Next 委托 来串连起来的，如果在某一个中间件中没有调用 Next 委托，则该中间件将做为管道的终点，因此，我们在最后一个中间件不应该再调用 Next 委托，而 Run 扩展方法，通常用来注册最后一个中间件。
+>+ `New` IApplicationBuilder 还有一个常用的 New 方法，通常用来创建分支。New 方法根据自身来“克隆”了一个新的 ApplicationBuilder 对象，而新的 ApplicationBuilder 可以访问到创建它的对象的 Properties 属性，但是对自身 Properties 属性的修改，却不到影响到它的创建者，这是通过 CopyOnWriteDictionary 来实现的。                 
+
+> **IMiddleware** 通过上面的介绍，我们知道，中间件本质上就是一个类型为 Func<RequestDelegate, RequestDelegate> 的委托对象，但是直接使用这个委托对象还是多有不便，因此 ASP.NET Core IMiddleware 中只有一个方法：InvokeAsync，它接收一个 HttpContext 参数，用来处理HTTP请求，和一个 RequestDelegate 参数，代表下一个中间件。对于 IMiddleware 类型的中间件的注册，使用 UseMiddleware 扩展方法。                    
+
 
 
 

@@ -101,7 +101,7 @@ namespace webapp
         {
 
             //而B的执行会嵌套在A的里面，因此A是第一个处理Request，并且最后一个收到Respone，这样就构成一个经典的的U型管道。
-            app.Use(x =>
+            app.Use(next =>
             {
                 Console.WriteLine("A");// 这个内容在管道初始化的时候执行，后面的每次请求就不执行了。
 
@@ -112,7 +112,7 @@ namespace webapp
 
                     // 2. 调用下一个中间件
                     Console.WriteLine("A-BeginNext");
-                    await x(context);
+                    await next(context);
                     //await context.Response.WriteAsync("A-BeginNext"); //会覆盖到上一个中间件B的返回内容。
                     Console.WriteLine("A-EndNext");
 
@@ -120,7 +120,7 @@ namespace webapp
                     //TODO
                 };
             });
-            app.Use(x =>
+            app.Use(next =>
             {
                 Console.WriteLine("B");// 这个内容在管道初始化的时候执行，后面的每次请求就不执行了。
 
@@ -129,10 +129,10 @@ namespace webapp
                     // 1. 对Request做一些处理
                     // TODO
 
-
                     // 2. 调用下一个中间件
                     Console.WriteLine("B-BeginNext");
-                    await context.Response.WriteAsync("B-BeginNext");
+                    //await context.Response.WriteAsync("B-BeginNext"); //这个会截断后续的中间件。因为没有调用
+                    await next(context);
                     Console.WriteLine("B-EndNext");
 
                     // 3. 生成 Response
@@ -140,7 +140,22 @@ namespace webapp
                 };
             });
 
+            //因为是Run，所以会截断后续的中间件。
+            app.Run(async context =>
+            {
 
+                await context.Response.WriteAsync("进入第3个委托\r\n");
+                await context.Response.WriteAsync("Hello from 3rd delegate.\r\n");
+                await context.Response.WriteAsync("结束第3个委托\r\n");
+            });
+            app.Run(async context =>
+            {
+
+                await context.Response.WriteAsync("进入第4个委托\r\n");
+                await context.Response.WriteAsync("Hello from 4th delegate.\r\n");
+                await context.Response.WriteAsync("结束第4个委托\r\n");
+
+            });
 
             //app.Use(next =>
             //{
