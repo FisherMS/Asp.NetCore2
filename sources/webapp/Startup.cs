@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using webapp.Hosting;
+using webapp.Middleware;
 
 namespace webapp
 {
@@ -99,6 +100,29 @@ namespace webapp
        // 我们使用Use注册两个简单的中间件：
         public void Configure(IApplicationBuilder app, IApplicationLifetime appLifetime)
         {
+            //当访问//assets下的资源时后续中间件全部放弃。
+            app.MapWhen(context => context.Request.Path.StartsWithSegments("/assets"),
+                appBuilder => appBuilder.UseStaticFiles());
+
+
+            app.UseGuestIp();//使用中间件
+
+
+            //UseWhen 示例。
+            //UseWhen是非常强大和有用的，建议当我们想要针对某些请求做一些特定的处理时，我们应该只为这些请求注册特定的中间件，而不是在中间件中去判断请求是否符合预期来选择执行某些操作，这样能有更好的性能。
+            //当路径以/api开头时再调用一次UseGuestIp
+            app.UseWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+            {
+                appBuilder.UseGuestIp();
+            });
+
+            ////当符合条件后执行当前及以前的中间件，后续的不再执行。反之则当前的中间件不执行。其它的都执行。（就是路由走了，原来的线路分支去了。）
+            //app.MapWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+            //{
+            //    appBuilder.UseGuestIp();
+            //});
+
+
 
             //而B的执行会嵌套在A的里面，因此A是第一个处理Request，并且最后一个收到Respone，这样就构成一个经典的的U型管道。
             app.Use(next =>

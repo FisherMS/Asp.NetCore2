@@ -138,9 +138,22 @@ public void ConfigureContainer(ContainerBuilder builder)
 >+ `Run` 在我们注册的中间件中，是通过 Next 委托 来串连起来的，如果在某一个中间件中没有调用 Next 委托，则该中间件将做为管道的终点，因此，我们在最后一个中间件不应该再调用 Next 委托，而 Run 扩展方法，通常用来注册最后一个中间件。
 >+ `New` IApplicationBuilder 还有一个常用的 New 方法，通常用来创建分支。New 方法根据自身来“克隆”了一个新的 ApplicationBuilder 对象，而新的 ApplicationBuilder 可以访问到创建它的对象的 Properties 属性，但是对自身 Properties 属性的修改，却不到影响到它的创建者，这是通过 CopyOnWriteDictionary 来实现的。                 
 
-> **IMiddleware** 通过上面的介绍，我们知道，中间件本质上就是一个类型为 Func<RequestDelegate, RequestDelegate> 的委托对象，但是直接使用这个委托对象还是多有不便，因此 ASP.NET Core IMiddleware 中只有一个方法：InvokeAsync，它接收一个 HttpContext 参数，用来处理HTTP请求，和一个 RequestDelegate 参数，代表下一个中间件。对于 IMiddleware 类型的中间件的注册，使用 UseMiddleware 扩展方法。                    
+> **IMiddleware** 通过上面的介绍，我们知道，中间件本质上就是一个类型为 Func<RequestDelegate, RequestDelegate> 的委托对象，但是直接使用这个委托对象还是多有不便，因此 ASP.NET Core IMiddleware 中只有一个方法：InvokeAsync，它接收一个 HttpContext 参数，用来处理HTTP请求，和一个 RequestDelegate 参数，代表下一个中间件。对于 IMiddleware 类型的中间件的注册，使用 UseMiddleware 扩展方法。 通常我们并不会去实现 IMiddleware 接口，而是采用基于约定的，更加灵活的方式来定义中间件，而此时，UseMiddleware 方法会通过反射来创建中间件的实例（如果使用接口，那么还要进行DI注册）。     
 
+> **UseWhen** 在有些场景下，我们可能需要针对某些请求，做一些特定的操作。当然，我们可以定义一个中间件，在中间件中判断该请求是否符合我们的预期，进而选择是否执行该操作。但是有一种更好的方式 UseWhen 来实现这样的需求。从名字我们可以猜出，它提供了一种基于条件来注册中间件的方式（首先使用上面介绍过的 New 方法创建一个管道分支，将我们传入的 configuration 委托注册到该分支中，然后再将 Main 也就是后续的中间件也注册到该分支中，最后通过我们指定的 Predicate 来判断是执行新分支，还是继续在之前的管道中执行。）。   以下是 UseWhen 的一些使用场景：
+>>+ 分别对MVC和WebAPI做出不同的错误响应。                  
+>>+ 为特定的IP添加诊断响应头。                 
+>>+ 只对匿名用户使用输出缓存。                  
+>>+ 针对某些请求进行统计。   
+>>+ <font color=red>**思考：为什么UseWhen在命中条件时使用新的分支AppBuilder？**</font>
 
+> **MapWhen**  MapWhen 与 UseWhen 非常相似，但是他们有着本质的区别。MapWhen 并没有将父分支中的后续中间件注册进来，而是一个独立的分支，而在 MapWhenMiddleware 中只是简单的判断是执行新分支还是旧分支(条件命中后原先分支直接放弃)。当我们希望某些请求使用完全独立的处理方式时，MapWhen 就非常有用，如 UseStaticFiles。               
+> **UsePathBase** UsePathBase用于拆分请求路径，类似于 MVC 中 Area 的效果，它不会创建请求管道分支，不影响管道的流程，仅仅是设置 Request 的 Path 和 PathBase 属性。PathString 用来表示请求路径的一个片段，它可以从字符串隐式转换，但是要求必须以 / 开头，并且不以 / 结尾。                        
+> **Map** Map 包含 UsePathBase 的功能，并且创建一个独立的分支来完成请求的处理，类似于 MapWhen。Map 扩展方法比 MapWhen 多了对 Request.PathBase 和 Request.Path 的处理。                                                              
+> **在 ASP.NET Core 中，至少要有一个中间件来响应请求，而我们的应用程序实际上只是中间件的集合，MVC 也只是其中的一个中间件而已。简单来说，中间件就是一个处理http请求和响应的组件，多个中间件构成了请求处理管道，每个中间件都可以选择处理结束，还是继续传递给管道中的下一个中间件，以此串联形成请求管道。通常，我们注册的每个中间件，每次请求和响应均会被调用，但也可以使用 Map , MapWhen ,UseWhen 等扩展方法对中间件进行过滤。**                                       
+[参考1](http://www.cnblogs.com/RainingNight/p/middleware-in-asp-net-core.html)                   
+[conditional-middleware-based-on-request](https://www.devtrends.co.uk/blog/conditional-middleware-based-on-request-in-asp.net-core)                   
+[asp-net-core-and-the-enterprise-part-3-middleware](http://odetocode.com/blogs/scott/archive/2016/11/22/asp-net-core-and-the-enterprise-part-3-middleware.aspx)                   
 
 
 
