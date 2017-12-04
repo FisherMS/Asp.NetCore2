@@ -131,9 +131,11 @@ public void ConfigureContainer(ContainerBuilder builder)
 [Looking-at-asp-net-cores-iapplicationlifetime](http://www.khalidabuhakmeh.com/looking-at-asp-net-cores-iapplicationlifetime)        
 
 
-
-
-
+## ASP.NET Core 运行原理解剖 **Middleware-请求管道的构成** 示例：webapp  ## 
+> **IApplicationBuilder**： 首先，IApplicationBuilder 是用来构建请求管道的，而所谓请求管道，本质上就是对 HttpContext 的一系列操作，即通过对 Request 的处理，来生成 Reponse。因此，在 ASP.NET Core 中定义了一个 RequestDelegate 委托，来表示请求管道中的一个步骤，它有如下定义：`public delegate Task RequestDelegate(HttpContext context);`。而对请求管道的注册是通过 `Func<RequestDelegate, RequestDelegate>` 类型的委托（也就是中间件）来实现的。它接收一个 RequestDelegate 类型的参数，并返回一个 RequestDelegate 类型，也就是说前一个中间件的输出会成为下一个中间件的输入，这样把他们串联起来，形成了一个完整的管道。它有一个内部的 Func<RequestDelegate, RequestDelegate> 类型的集合（用来保存我们注册的中间件）和三个核心方法：       
+>+  `Use`   是我们非常熟悉的注册中间件的方法，其实现非常简单，就是将注册的中间件保存到其内部属性 _components 中。                   
+>+ `Build` 在 Hosting 的启动中，便是通过该 Build 方法创建一个 RequestDelegate 类型的委托，Http Server 通过该委托来完成整个请求的响应。Build中首先定义了一个 404 的中间件。我们注册的第一个中间件A开始执行，A调用B，B则调用前面介绍的404 的中间件。              
+>+ `Run` 在我们注册的中间件中，是通过 Next 委托 来串连起来的，如果在某一个中间件中没有调用 Next 委托，则该中间件将做为管道的终点，因此，我们在最后一个中间件不应该再调用 Next 委托，而 Run 扩展方法，通常用来注册最后一个中间件。
 
 
 

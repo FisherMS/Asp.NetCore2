@@ -72,28 +72,88 @@ namespace webapp
         //}
 
 
+        //public void Configure(IApplicationBuilder app, IApplicationLifetime appLifetime)
+        //{
+        //    appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started"));
+        //    appLifetime.ApplicationStopping.Register(() => Console.WriteLine("Stopping"));
+        //    appLifetime.ApplicationStopped.Register(() =>
+        //    {
+        //        Console.WriteLine("Stopped");
+        //        Console.ReadKey();
+        //    });
+
+        //    appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started again.")); //注册的方法都会执行，最后的方法最先执行。 
+
+
+        //    app.Use(next =>
+        //    {
+        //        return async (context) =>
+        //        {
+        //            await context.Response.WriteAsync("Hello ASP.NET Core!");
+        //            appLifetime.StopApplication();
+        //        };
+        //    });
+        //}
+
+
+       // 我们使用Use注册两个简单的中间件：
         public void Configure(IApplicationBuilder app, IApplicationLifetime appLifetime)
         {
-            appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started"));
-            appLifetime.ApplicationStopping.Register(() => Console.WriteLine("Stopping"));
-            appLifetime.ApplicationStopped.Register(() =>
+
+            //而B的执行会嵌套在A的里面，因此A是第一个处理Request，并且最后一个收到Respone，这样就构成一个经典的的U型管道。
+            app.Use(x =>
             {
-                Console.WriteLine("Stopped");
-                Console.ReadKey();
-            });
+                Console.WriteLine("A");// 这个内容在管道初始化的时候执行，后面的每次请求就不执行了。
 
-            appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started again.")); //注册的方法都会执行，最后的方法最先执行。 
-
-
-            app.Use(next =>
-            {
                 return async (context) =>
                 {
-                    await context.Response.WriteAsync("Hello ASP.NET Core!");
-                    appLifetime.StopApplication();
+                    // 1. 对Request做一些处理
+                    // TODO
+
+                    // 2. 调用下一个中间件
+                    Console.WriteLine("A-BeginNext");
+                    await x(context);
+                    //await context.Response.WriteAsync("A-BeginNext"); //会覆盖到上一个中间件B的返回内容。
+                    Console.WriteLine("A-EndNext");
+
+                    // 3. 生成 Response
+                    //TODO
                 };
             });
+            app.Use(x =>
+            {
+                Console.WriteLine("B");// 这个内容在管道初始化的时候执行，后面的每次请求就不执行了。
+
+                return async (context) =>
+                {
+                    // 1. 对Request做一些处理
+                    // TODO
+
+
+                    // 2. 调用下一个中间件
+                    Console.WriteLine("B-BeginNext");
+                    await context.Response.WriteAsync("B-BeginNext");
+                    Console.WriteLine("B-EndNext");
+
+                    // 3. 生成 Response
+                    //TODO
+                };
+            });
+
+
+
+            //app.Use(next =>
+            //{
+            //    return async (context) =>
+            //    {
+            //        await context.Response.WriteAsync("Hello ASP.NET Core!");
+            //        appLifetime.StopApplication();
+            //    };
+            //});
+
         }
+
+
 
 
 

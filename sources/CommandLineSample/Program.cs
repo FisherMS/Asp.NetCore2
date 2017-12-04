@@ -16,25 +16,33 @@ namespace CommandLineSample
             var builder = new ConfigurationBuilder()
                 .AddJsonFile("cfg.json",false,true); //最后一个参数表示更新时自动加载进来。
             var configuration = builder.Build();
+            Console.WriteLine($"classNo:{configuration["classNo"]}");
+            Console.WriteLine($"classDesc:{configuration["classDesc"]}");
 
-            while (true)
-            {
-                Console.WriteLine($"classNo:{configuration["classNo"]}");
-                Console.WriteLine($"classDesc:{configuration["classDesc"]}");
 
-                Console.WriteLine("Students:");
 
-                Console.Write($"{configuration["students:0:name"]}");
-                Console.WriteLine($"{configuration["students:0:age"]}");
 
-                Console.Write($"{configuration["students:1:name"]}");
-                Console.WriteLine($"{configuration["students:1:age"]}");
 
-                Console.Write($"{configuration["students:2:name"]}");
-                Console.WriteLine($"{configuration["students:2:age"]}");
 
-                Thread.Sleep(500);
-            }
+
+            //while (true)
+            //{
+            //    Console.WriteLine($"classNo:{configuration["classNo"]}");
+            //    Console.WriteLine($"classDesc:{configuration["classDesc"]}");
+
+            //    Console.WriteLine("Students:");
+
+            //    Console.Write($"{configuration["students:0:name"]}");
+            //    Console.WriteLine($"{configuration["students:0:age"]}");
+
+            //    Console.Write($"{configuration["students:1:name"]}");
+            //    Console.WriteLine($"{configuration["students:1:age"]}");
+
+            //    Console.Write($"{configuration["students:2:name"]}");
+            //    Console.WriteLine($"{configuration["students:2:age"]}");
+
+            //    Thread.Sleep(500);
+            //}
 
 
 
