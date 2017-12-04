@@ -19,7 +19,7 @@ namespace webapp
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args) //是在 2.0 中新增的
-                .UseStartup<Startup>()
+                .UseStartup<Startup>() //可以通过在不同环境下调用不同的Startup来使用不同的Startup启动。
                 .Build();
     }
 }

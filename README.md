@@ -97,6 +97,47 @@ asp.net core 2 app 学习
 + [参考内容1](https://weblog.west-wind.com/posts/2016/Jun/06/Publishing-and-Running-ASPNET-Core-Applications-with-IIS)     
 + [参考内容2](http://www.cnblogs.com/RainingNight/p/hosting-in-asp-net-core.html)
 
+## ASP.NET Core 运行原理解剖 **Hosting之配置** 示例：webapp  ## 
+> **WebHostBuild** 用来构建 WebHost ，也是我们最先接触的一个类。 它提供了如下方法：
+>+   ConfigureAppConfiguration: Configuration 在 ASP.NET Core 进行了全新的设计，使其更加灵活简洁，可以支持多种数据源。    
+>+ UseSetting:UseSetting 是一个非常重要的方法，它用来配置 WebHost 中的 IConfiguration 对象。需要注意与上面ConfigureAppConfiguration的区别， WebHost 中的 Configuration 只限于在 WebHost 使用，并且我们不能配置它的数据源，它只会读取ASPNETCORE_开头的环境变量UseSetting 是一个非常重要的方法，它用来配置 WebHost 中的 IConfiguration 对象。需要注意与上面ConfigureAppConfiguration的区别， WebHost 中的 Configuration 只限于在 WebHost 使用，并且我们不能配置它的数据源，它只会读取ASPNETCORE_开头的环境变量。而我们比较熟悉的当前执行环境，也是通过该_config来读取的，虽然我们不能配置它的数据源，但是它为我们提供了一个UseSetting方法，为我们提供了一个设置_config的机会。而我们通过UseSetting设置的变量最终也会以MemoryConfigurationProvider的形式添加到上面介绍的ConfigureAppConfiguration所配置的IConfiguration对象中。           
+>+ UseStartup: UseStartup 这个我们都比较熟悉，它用来显式注册我们的Startup类，可以使用泛性，Type , 和程序集名称三种方式来注册。通过反射创建实例，然后注入到 DI 系统中。    
+>+ ConfigureLogging: ConfigureLogging 用来配置日志系统，在 ASP.NET Core 1.x 中是在Startup类的Configure方法中，通过ILoggerFactory扩展来注册的，在 ASP.NET Core 中也变得更加简洁，并且统一通过 WebHostBuild 来配置。       
+>+ ConfigureServices: 在上面的几个方法中，多次用到 ConfigureServices，而 ConfigureServices 与 Starup 中的 ConfigureServices 类似，都是用来注册服务的。       
+
+> **ISartup**: ISartup 是我们比较熟悉的，因为在我们创建一个默认的 ASP.NET Core 项目时，都会有一个Startup.cs文件，包含三个约定的方法，按执行顺序排列如下：   
+>+ ConfigureServices : ASP.NET Core 框架本身提供了一个 DI（依赖注入）系统，并且可以非常灵活的去扩展，很容易的切换成其它的 DI 框架（如 Autofac，Ninject 等）。在 ASP.NET Core 中，所有的实例都是通过这个 DI 系统来获取的，并要求我们的应用程序也使用 DI 系统，以便我们能够开发出更具弹性，更易维护，测试的应用程序。总之在 ASP.NET Core 中，一切皆注入。关于 “依赖注入” 这里就不再多说。**在 DI 系统中，想要获取服务，首先要进行注册，而ConfigureServices方法便是用来注册服务的**。            
+>+ ConfigureContainer（不常用）:ConfigureContainer 是用来替换 DI 框架的，如下，我们将 ASP.NET Core 内置的 DI 框架替换为 Autofac ：
+```C#
+public void ConfigureContainer(ContainerBuilder builder)
+{
+    builder.RegisterModule(new AutofacModule());
+}
+```
+>+ Configure： Configure 接收一个IApplicationBuilder类型参数，用来构建请求管道的，因此，也可以说 Configure 方法是用来配置请求管道的，通常会在这里会注册一些中间件。所谓中间件，也就是对 HttpContext 进行处理的一种便捷方式。而如Startup中的代码，我们注册了一个最简单的中间件，通过浏览器访问，便可以看到 “Hello ASP.NET Core!” 。            
+
+> **IHostingStartup**：一个项目中只能一个Sartup，因为如果配置多个，则最后一个会覆盖之前的。而在一个多层项目中，Sartup类一般是放在展现层中，我们在其它层也需要注册一些服务或者配置请求管道时，通常会写一个扩展方法。然后在 Startup 中调用这些扩展方法。
+>+ WebHost 会在 Starup 这前调用 IHostingStartup，于是可以用`[assembly: HostingStartup(typeof(Zero.EntityFramework.EFRepositoryStartup))]`来进行调用，避免修改Startup代码。但还是需要修改Program中的Host代码，调用UseSetting方法注册。同时还要将相关的dll放到对应的bin目录里。     
+>+ **IHostingStartup 是由 WebHostBuilder 来调用的，执行时机较早，在创建 WebHost 之前执行，因此可以替换一些在 WebHost 中需要使用的服务。**        
+
+> **IStartupFilter**： IStartupFilter 是除Startup和HostingStartup之处另一种配置IApplicationBuilder的方式。它只有一个Configure方法，是对 Starup 类中Configure方法的拦截器，给我们一个在Configure方法执行之前进行一些配置的机会。WebHost 在执行 Starup 类中Configure方法之前，会从 DI 系统中获取所有的IStartupFilter来执行（方法ConfigureServicees先于Configure执行）。注意：配置都是首次运行时执行一次，后面是不在执行了。   
+
+> **IHostedService**：当我们希望随着 ASP.NET Core 的启动，来执行一些后台任务（如：定期的刷新缓存等）时，并在 ASP.NET Core 停止时，可以优雅的关闭，则可以使用IHostedService。见代码：CacheHostService类的实现。     
+
+> **IApplicationLifetime**：IApplicationLifetime用来实现 ASP.NET Core 的生命周期钩子，我们可以在 ASP.NET Core 停止时做一些优雅的操作，如资源的清理等。IApplicationLifetime已被 ASP.NET Core 注册到 DI 系统中，我们使用的时候，只需要注入即可。它有三个CancellationToken类型的属性，是异步方法终止执行的信号，表示 ASP.NET Core 生命周期的三个阶段：启动，开始停止，已停止。                 
+[参考1](http://www.cnblogs.com/RainingNight/p/hosting-configure-in-asp-net-core.html)     
+[ASP-NET-Core-2-IHostedService](https://www.stevejgordon.co.uk/asp-net-core-2-ihostedservice)        
+[ASPNET-Core-2.0-Stripping-Away-Cross-Cutting-Concerns](https://cetus.io/tim/ASPNET-Core-2.0-Stripping-Away-Cross-Cutting-Concerns/)          
+[Looking-at-asp-net-cores-iapplicationlifetime](http://www.khalidabuhakmeh.com/looking-at-asp-net-cores-iapplicationlifetime)        
+
+
+
+
+
+
+
+
+
 
 
 

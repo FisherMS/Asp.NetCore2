@@ -5,7 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using webapp.Hosting;
 
 namespace webapp
 {
@@ -15,20 +19,158 @@ namespace webapp
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            //services.AddScoped<IMyService, MyServiceImplement>(); //IOC注册服务
+
+
+            //Note:WebHost 在执行 Starup 类中Configure方法之前，会从 DI 系统中获取所有的IStartupFilter来执行
+            services.AddSingleton<IStartupFilter, A>();
+            services.AddSingleton<IStartupFilter, B>();
+
+
+            //如上，我们定义了一个在台后每5秒刷新一次缓存的服务，并在 ASP.NET Core 程序停止时，优雅的关闭。最后，将它注册到 DI 系统中即可
+            services.AddSingleton<ICacheService, CacheService>();
+            services.AddSingleton<IHostedService, CacheHostService>();
+            //WebHost 在启动 HTTP Server 之后，会从 DI 系统中获取所有的IHostedService，来启动我们注册的 HostedService
+
+
+
+
+
+
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+        //Note:Configure  only accecpt one.
 
-            app.Run(async (context) =>
+        //// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        //public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        //{
+        //    if (env.IsDevelopment())
+        //    {
+        //        app.UseDeveloperExceptionPage();
+        //    }
+
+        //    app.Run(async (context) =>
+        //    {
+        //        await context.Response.WriteAsync("Hello World!");
+        //    });
+        //}
+
+
+
+        //public void Configure(IApplicationBuilder app)
+        //{
+        //    Console.WriteLine("This is Configure!");
+
+        //    //注册了一个最简单的中间件,通过浏览器访问，便可以看到 “Hello ASP.NET Core!” 
+        //    app.Use(next =>
+        //    {
+        //        return async (context) =>
+        //        {
+        //            await context.Response.WriteAsync("Hello ASP.NET Core!");
+        //        };
+        //    });
+        //}
+
+
+        public void Configure(IApplicationBuilder app, IApplicationLifetime appLifetime)
+        {
+            appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started"));
+            appLifetime.ApplicationStopping.Register(() => Console.WriteLine("Stopping"));
+            appLifetime.ApplicationStopped.Register(() =>
             {
-                await context.Response.WriteAsync("Hello World!");
+                Console.WriteLine("Stopped");
+                Console.ReadKey();
+            });
+
+            appLifetime.ApplicationStarted.Register(() => Console.WriteLine("Started again.")); //注册的方法都会执行，最后的方法最先执行。 
+
+
+            app.Use(next =>
+            {
+                return async (context) =>
+                {
+                    await context.Response.WriteAsync("Hello ASP.NET Core!");
+                    appLifetime.StopApplication();
+                };
             });
         }
+
+
+
+
+        //然后在 Startup 中调用这些扩展方法：
+
+        //public void ConfigureDevelopmentServices(IServiceCollection services)
+        //{
+        //    services.AddEF(Configuration.GetConnectionString("DefaultConnection");
+        //}
+
+        //public void ConfigureDevelopment(IApplicationBuilder app)
+        //{
+        //    services.UseEF();
+        //}
     }
+
+
+
+    //而在一个多层项目中，Sartup类一般是放在展现层中，我们在其它层也需要注册一些服务或者配置请求管道时，通常会写一个扩展方法
+    //public static class EfRepositoryExtensions
+    //{
+    //    public static void AddEF(this IServiceCollection services, string connectionStringName)
+    //    {
+    //        services.AddDbContext<AppDbContext>(options =>
+    //                options.UseSqlServer(connectionStringName), opt => opt.EnableRetryOnFailure())
+    //            );
+
+    //        services.TryAddScoped<IDbContext, AppDbContext>();
+    //        services.TryAddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
+
+    //            ...
+    //    }
+
+    //    public static void UseEF(IApplicationBuilder app)
+    //    {
+    //        app.UseIdentity();
+    //    }
+    //}
+
+
+    //感觉这种方式非常丑陋，而在上一章中，我们知道 WebHost 会在 Starup 这前调用 IHostingStartup，于是我们便以如下方式来实现：
+    //[assembly: HostingStartup(typeof(Zero.EntityFramework.EFRepositoryStartup))]
+    //namespace Zero.EntityFramework
+    //{
+    //    public class EFRepositoryStartup : IHostingStartup
+    //    {
+    //        public void Configure(IWebHostBuilder builder)
+    //        {
+    //            builder.ConfigureServices(services =>
+    //            {
+    //                services.AddDbContext<AppDbContext>(options =>
+    //                        options.UseSqlServer(connectionStringName), opt => opt.EnableRetryOnFailure())
+
+    //                    );
+
+    //                services.TryAddScoped<IDbContext, AppDbContext>();
+    //                services.TryAddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
+
+    //                    ...
+    //            }); 
+
+    //            builder.Configure(app => {
+    //                app.UseIdentity();
+    //            });
+    //        }
+    //    }
+    //}
+
+    //如上，只需实现 IHostingStartup 接口，要清爽简单的多，怎一个爽字了得！不过，还需要进行注册才会被WebHost执行，首先要指定HostingStartupAttribute程序集特性，其次需要配置 WebHost 中的 IConfiguration[hostingStartupAssemblies]，以便 WebHost 能找到我们的程序集，可以使用如下方式配置：
+    //WebHost.CreateDefaultBuilder(args)
+    //// 如需指定多个程序集时，使用 ; 分割
+    //.UseSetting(WebHostDefaults.HostingStartupAssembliesKey, "Zero.Application;Zero.EntityFramework")
+
+    //这样便完成了 IHostingStartup 注册，不过还需要将包含IHostingStartup的程序集放到 Bin 目录下，否则根本无法加载。不过 ASP.NET Core 也提供了类似插件的方式来指定IHostingStartup程序集的查找位置，可通过设置DOTNET_ADDITIONAL_DEPS和ASPNETCORE_HOSTINGSTARTUPASSEMBLIES来实现，而这里就不再多说。
+
+
+
+
 }
