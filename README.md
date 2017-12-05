@@ -156,6 +156,10 @@ public void ConfigureContainer(ContainerBuilder builder)
 [asp-net-core-and-the-enterprise-part-3-middleware](http://odetocode.com/blogs/scott/archive/2016/11/22/asp-net-core-and-the-enterprise-part-3-middleware.aspx)                   
 
 
+## ASP.NET Core 运行原理解剖 **进入HttpContext的世界** 示例：webapp  ## 
+> HttpContext是ASP.NET中的核心对象，每一个请求都会创建一个对应的HttpContext对象，我们的应用程序便是通过HttpContext对象来获取请求信息，最终生成响应，写回到HttpContext中，完成一次请求处理。     
+> **IHttpContextFactory** WebHost 在启动 IServer 时，会传入一个 IHttpApplication<TContext> 类型的对象，Server 负责对请求的监听，在接收到请求时，会调用该对象的 ProcessRequestAsync 方法将请求转交给我们的应用程序。IHttpApplication<TContext> 的默认实现为 HostingApplication。           
+
 
 
 
