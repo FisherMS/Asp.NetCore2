@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using webapp.Authentication;
 using webapp.Hosting;
 using webapp.Middleware;
 
@@ -35,8 +38,8 @@ namespace webapp
 
 
 
-
-
+            //在DI系统中注册我们的授权认真的 Handler和Scheme
+            services.AddAuthenticationCore(options => options.AddScheme<MyAuthHandler>("myScheme", "demo scheme"));
 
         }
 
@@ -97,9 +100,74 @@ namespace webapp
         //}
 
 
-       // 我们使用Use注册两个简单的中间件：
+        // 我们使用Use注册两个简单的中间件：
         public void Configure(IApplicationBuilder app, IApplicationLifetime appLifetime)
         {
+
+            #region 通过HttpContext来调用认证系统了
+
+            // 登录
+            app.Map("/login", builder => builder.Use(next =>
+            {
+                return async (context) =>
+                {
+                    var claimIdentity = new ClaimsIdentity();
+                    claimIdentity.AddClaim(new Claim(ClaimTypes.Name, "jim"));
+                    await context.SignInAsync("myScheme", new ClaimsPrincipal(claimIdentity));
+                };
+            }));
+
+            // 退出
+            app.Map("/logout", builder => builder.Use(next =>
+            {
+                return async (context) =>
+                {
+                    await context.SignOutAsync("myScheme");
+                };
+            }));
+
+            // 认证
+            app.Use(next =>
+            {
+                return async (context) =>
+                {
+                    var result = await context.AuthenticateAsync("myScheme");
+                    if (result?.Principal != null) context.User = result.Principal;
+                    await next(context);
+                };
+            });
+
+            // 授权
+            app.Use(async (context, next) =>
+            {
+                var user = context.User;
+                if (user?.Identity?.IsAuthenticated ?? false)
+                {
+                    if (user.Identity.Name != "jim") await context.ForbidAsync("myScheme");
+                    else await next();
+                }
+                else
+                {
+                    await context.ChallengeAsync("myScheme");
+                }
+            });
+
+            // 访问受保护资源
+            app.Map("/resource", builder => builder.Run(async (context) => await context.Response.WriteAsync("Hello, ASP.NET Core!")));
+
+            #endregion
+
+
+
+
+
+
+
+
+
+
+
+
             //当访问//assets下的资源时后续中间件全部放弃。
             app.MapWhen(context => context.Request.Path.StartsWithSegments("/assets"),
                 appBuilder => appBuilder.UseStaticFiles());

@@ -168,6 +168,47 @@ public void ConfigureContainer(ContainerBuilder builder)
 
 > **IHttpContextAccessor**    它的定义非常简单，就只有一个 HttpContext 属性，它在ASP.NET Core 中还有一个内置的实现类：HttpContextAccessor。在 ASP.NET 4.x 我们经常会通过 HttpContext.Current 来获取当前请求的 HttpContext 对象，而在 ASP.NET Core 中，HttpContext 不再有 Current 属性，并且在 ASP.NET Core 中一切皆注入，更加推荐使用注入的方式来获取实例，而非使用静态变量。因此，ASP.NET Core 提供了一个 IHttpContextAccessor 接口，用来统一获取当前请求的 HttpContext 实例的方式。 不过，ASP.NET Core 默认并没有注入 IHttpContextAccessor 对象，如果我们想在应用程序中使用它，则需要手动来注册。                                                                 
 
+## ASP.NET Core 运行原理解剖 **Authentication** 示例：webapp  ##
+> 在现代应用程序中，认证已不再是简单的将用户凭证保存在浏览器中，而要适应多种场景，如App，WebAPI，第三方登录等等。在 ASP.NET 4.x 时代的Windows认证和Forms认证已无法满足现代化的需求，因此在ASP.NET Core 中对认证及授权进行了全新设计，使其更加灵活，可以应付各种场景。
+
+> **AuthenticationHttpContextExtensions** 类是对 HttpContext 认证相关的扩展，主要包括如上6个扩展方法，其它的只是一些参数重载。
+>+ **SignInAsync** 用户登录成功后颁发一个证书（加密的用户凭证），用来标识用户的身份。           
+>+ **SignOutAsync** 退出登录，如清除Coookie等。
+>+ **AuthenticateAsync** 验证在 SignInAsync 中颁发的证书，并返回一个 AuthenticateResult 对象，表示用户的身份。
+>+ **ChallengeAsync** 返回一个需要认证的标识来提示用户登录，通常会返回一个 401 状态码。
+>+ **ForbidAsync** 禁上访问，表示用户权限不足，通常会返回一个 403 状态码。
+>+ **GetTokenAsync** 用来获取 AuthenticationProperties 中保存的额外信息。
+
+> 它们的实现都非常简单，与展示的第一个方法类似，从DI系统中获取到 IAuthenticationService 接口实例，然后调用其同名方法。因此，如果我们希望使用认证服务，那么首先要注册 IAuthenticationService 的实例。  AddAuthenticationCore 中注册了认证系统的三大核心对象：IAuthenticationSchemeProvider，IAuthenticationHandlerProvider 和 IAuthenticationService，以及一个对Claim进行转换的 IClaimsTransformation(不常用)，下面就来介绍一下这三大对象。      
+>+ **IAuthenticationSchemeProvider** 首先来解释一下 Scheme 是用来做什么的。因为在 ASP.NET Core 中可以支持各种各样的认证方式（如，cookie, bearer, oauth, openid 等等），而 Scheme 用来标识使用的是哪种认证方式，不同的认证方式其处理方式是完全不一样的，所以Scheme是非常重要的。IAuthenticationSchemeProvider 用来提供对Scheme的注册和查询。**.AddScheme** 方法，用来注册Scheme，而每一种Scheme最终体现为一个 AuthenticationScheme 类型的对象。每一个Scheme中还包含一个对应的IAuthenticationHandler类型的Handler，由它来完成具体的处理逻辑。        
+>+ **IAuthenticationHandlerProvider** 在 ASP.NET Core 的认证系统中，AuthenticationHandler 负责对用户凭证的验证。AuthenticationHandler的创建是通过 IAuthenticationHandlerProvider 来完成的。*Provider 只定义了一个 GetHandlerAsync 方法，来获取指定的Scheme的Hander，在 ASP.NET Core 中，很多地方都使用了类似的 Provider 模式。* AuthenticationHandlerProvider 首先使用 IAuthenticationSchemeProvider 获取到当前Scheme，然后先从DI中查找是否有此Scheme中的Handler，如果未注册到DI系统中，则使用 ActivatorUtilities 来创建其实例，并缓存到内部的 _handlerMap 字典中。      
+>+ **IAuthenticationService** 本质上是对 IAuthenticationSchemeProvider 和IAuthenticationHandlerProvider 封装，用来对外提供一个统一的认证服务接口。   SignInAsync和SignOutAsync则使用了独立的定义接口，SignInAsync 和 SignOutAsync 之所以使用独立的接口，是因为在现代架构中，通常会提供一个统一的认证中心，负责证书的颁发及销毁（登入和登出），而其它服务只用来验证证书，用不到SingIn/SingOut。    而 IAuthenticationService 的默认实现 AuthenticationService 中的逻辑就非常简单了，只是调用Handler中的同名方法。                 
+>>+ **AuthenticateResult** 用来表示认证的结果。它主要包含一个核心属性 AuthenticationTicket。我们可以把AuthenticationTicket看成是一个经过认证后颁发的证书，其 ClaimsPrincipal 属性我们较为熟悉，表示证书的主体，在基于声明的认证中，用来标识一个人的身份（如：姓名，邮箱等等）。AuthenticationProperties 属性用来表示证书颁发的相关信息，如颁发时间，过期时间，重定向地址等等。
+在上面最开始介绍的HttpContext中的 GetTokenAsync 扩展方法便是对AuthenticationProperties的扩展。
+Token扩展只是对AuthenticationProperties中的 Items 属性进行添加和读取。         
+>>+ **IClaimsTransformation** 用来对由我们的应用程序传入的 ClaimsPrincipal 进行转换，它只定义了一个 Transform 方法，其默认实现，不做任何处理，直接返回。它适合于全局的为 ClaimsPrincipal 添加一些预定义的声明，如添加当前时间等，然后在DI中把我们的实现注册进去即可。           
+
+> **Usage** 见CodeDiff 。               
+
+> HttpAbstractions 提供了统一的认证规范，在我们的应用程序中，可以根据具体需求来灵活的扩展适合的认证方式。不过在 [Security](https://github.com/aspnet/Security) 提供了更加具体的实现方式，也包含了 Cookie, JwtBearer, OAuth, OpenIdConnect 等较为常用的认证实现。
+
+> ASP.NET Core 在GitHub上的开源地址为：https://github.com/aspnet ，包含了100多个项目，ASP.NET Core 的核心是 HttpAbstractions ，其它的都是围绕着 HttpAbstractions 进行的扩展。上述内容只包含 Hosting 和 HttpAbstractions ，它们两个已经构成了一个完整的 ASP.NET Core 运行时，不需要其它模块，就可以轻松应对一些简单的场景。
+
+> [参考1](http://www.cnblogs.com/RainingNight/p/authentication-in-asp-net-core.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
