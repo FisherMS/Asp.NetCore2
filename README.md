@@ -198,18 +198,37 @@ Token扩展只是对AuthenticationProperties中的 Items 属性进行添加和�
 
 
 
+## ASP.NET Core 认证与授权[1]:初识认证 示例：webauth  ## 
+> Forms认证很难进行扩展，因此，在 ASP.NET Core 中对认证与授权进行了全新的设计，并使用基于声明的认证(claims-based authentication)，以适应现代化应用的需求。
 
+> **基于声明的认证** 在传统的身份认证中，每个应用程序都有它自己的验证用户身份的方式，以及它自己的用户数据库。这种方式有很大的局限性，因为它很难集成多种认证方式以支持用户使用不同的方式来访问我们的应用程序，比如组织内的用户（Windows-baseed 认证），其它组织的用户（Identity federation）或者是来自互联网的用户（Forms-based 认证）等等。   而**Claim** 是关于一个人或组织的某个主题的陈述，比如：一个人的名称，角色，个人喜好，种族，特权，社团，能力等等。它本质上就是一个键值对，是一种非常通用的保存用户信息的方式，可以很容易的将认证和授权分离开来，前者用来表示用户是/不是什么，后者用来表示用户能/不能做什么。因此基于声明的认证有两个主要的特点：1. 将认证与授权拆分成两个独立的服务。2. 在需要授权的服务中，不用再去关心你是如何认证的，你用Windows认证也好，Forms认证也行，只要你出示你的 Claims 就行了。
 
+> **ASP.NET Core 中的用户身份** 在 ASP.NET Core 中，使用Cliam类来表示用户身份中的一项信息，它由核心的Type和Value属性构成。一个Claim可以是“用户的姓名”，“邮箱地址”，“电话”，等等，而多个Claim构成一个用户的身份，使用ClaimsIdentity类来表示。下面，我们演示一下用户身份的创建：
+```C#                   
+// 创建一个用户身份，注意需要指定AuthenticationType，否则IsAuthenticated将为false。
+var claimIdentity = new ClaimsIdentity("myAuthenticationType");
+// 添加几个Claim
+claimIdentity.AddClaim(new Claim(ClaimTypes.Name, "bob"));
+claimIdentity.AddClaim(new Claim(ClaimTypes.Email, "bob@gmail.com"));
+claimIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, "18888888888"));
+//如上，我们可以根据需要添加任意个的Claim，最后我们还需要再将用户身份放到ClaimsPrincipal对象中。
+```
+> **ClaimsPrincipal** 那么，ClaimsPrincipal是什么呢？在 ASP.NET 4.x 中我们可能对IPrincipal接口比较熟悉，在Controller中的User属性便是IPrincipal类型。可以看到IPrincipal除了包含用户身份外，还有一个IsInRole方法，用于判断用户是否属于指定角色，在基于角色的授权当中便是调用此方法来实现的。而在 ASP.NET Core 中，HttpContext直接使用的就是ClaimsPrincipal类型，而不再使用IPrincipal。而在ClaimsPrincipal中，可以包含多个用户身份(ClaimsIdentity)，除了对用户身份的操作，还提供了针对Claims的查询。由于HTTP是无状态的，我们通常使用Cookie，请求头或请求参数等方式来附加用户的信息，在网络上进行传输，这就涉及到序列化和安全方面的问题。因此，还需要将principal对象包装成AuthenticationTicket对象。
+> **AuthenticationTicket**  当我们创建完ClaimsPrincipal对象后，需要将它生成一个用户票据并颁发给用户，然后用户拿着这个票据，便可以访问受保持的资源，而在 ASP.NET Core 中，用户票据用AuthenticationTicket来表示，如在Cookie认证中，其认证后的Cookie值便是对该对象序列化后的结果。 用户票据除了包含上面创建的principal对象外，还需要指定一个AuthenticationScheme (通常在授权中用来验证Scheme)，并且还包含一个AuthenticationProperties对象，它主要是一些用户票据安全方面的一些配置，如过期时间，是否持久等。最后，我们可以将票据(token)写入到Cookie中，或是也可以以JSON的形式返回让客户端自行保存，由于我们对票据进行了加密，可以保证在网络中安全的传输而不会被篡改。
+> **Microsoft.AspNetCore.Authentication** 上面，我们介绍了身份票据的创建过程，下面就来介绍一下 ASP.NET Core 中的身份认证。ASP.NET Core 中的认证系统具体实现在 Security 项目中，它包含 Cookie, JwtBearer, OAuth, OpenIdConnect 等。 认证系统提供了非常灵活的扩展，可以让我们很容易的实现自定义认证方式。
 
+> **Usage** 而对于认证系统的配置，分为两步，也是我们所熟悉的注册服务和配置中间件。 [Microsoft.AspNetCore.Authentication](https://github.com/aspnet/Security/tree/dev/src/Microsoft.AspNetCore.Authentication)，是所有认证实现的公共抽象类，它定义了实现认证Handler的规范，并包含一些共用的方法，如令牌加密，序列化等，AddAuthentication 便是其提供的统一的注册认证服务的扩展方法。 
+> **AddScheme** 在上面的 AddAuthentication 中返回的是一个AuthenticationBuilder类型，所有认证Handler的注册都是以它的扩展形式来实现的，它同时也提供了AddScheme扩展方法，使我们可以更加方便的来配置Scheme。 AddScheme 扩展方法只是封装了对AuthenticationOptions中AddScheme的调用，AddCookie便是调用该扩展方法来实现的。           
+> **AddRemoteScheme** 看到 Remote 我们应该就可以猜到它是一种远程验证方式。首先使用PostConfigure模式，对RemoteAuthenticationOptions进行验证，要求远程验证中指定的SignInScheme不能为自身，这是为什么呢？后文再来解释。然后便是直接调用上面介绍的 AddScheme 方法。关于远程验证相对比较复杂，在本章中并不会太过深入的来介绍，在后续其它文章中会逐渐深入。
+> **UseAuthentication** 在上面，注册认证中间件时，我们只需调用一个UseAuthentication扩展方法，因为它会执行我们注册的所有认证Handler（只是注册了一个 AuthenticationMiddleware 而已）。 
 
+> **认证Handler** 上文中多次提到认证Handler，它由统一的AuthenticationMiddleware来调用，负责具体的认证实现，并分为本地认证与远程认证两种方式。在本地验证中，身份令牌的发放与认证通常是由同一个服务器来完成，这也是我们比较熟悉的场景，对于Cookie, JwtBearer等认证来说，都属于是本地验证。而当我们使用OAuth, OIDC等验证方式时，身份令牌的发放则是由独立的服务或是第三方（QQ, Weibo 等）认证来提供，此时在我们的应用程序中获取身份令牌时需要请求远程服务器，因此称之为远程验证。
+> **AuthenticationHandler** 是所有认证Handler的抽象基类，对于本地认证直接实现该类即可。 对于HandleAuthenticateAsync的实现，大致的逻辑就是从请求中获取上面发放的身份令牌，然后解析成AuthenticationTicket，并经过一系列的验证，最终返回ClaimsPrincipal对象。 
+> **RemoteAuthenticationHandler** 便是所有远程认证的抽象基类了，它继承自AuthenticationHandler，并实现了IAuthenticationRequestHandler接口。 在上面介绍的AuthenticationMiddleware中，提到它会先执行实现了IAuthenticationRequestHandler 接口的Handler（远程认证），之后（若未完成认证）再执行本地认证Handler。而RemoteAuthenticationHandler中核心的认证逻辑便是 HandleRequestAsync 方法，它主要包含2个步骤：
+>> 1. 首先执行一个抽象方法HandleRemoteAuthenticateAsync，由具体的Handler来实现，该方法返回的HandleRequestResult对象包含验证的结果（跳过，失败，成功等），在成功时会包含一个ticket对象。
+>> 1. 若上一步验证成功，则根据返回的ticket，获取到ClaimsPrincipal对象，并调用其它认证Handler的Context.SignInAsync方法。
 
-
-
-
-
-
-
-
-
+> 也就是说，远程Hander会在用户未登录时，指引用户跳转到认证服务器，登录成功后，解析认证服务器传回的凭证，最终依赖于本地Handler来保存身份令牌。当用户再次访问则无需经过远程Handler，直接交给本地Handler来处理。由此也可以知道，远程认证中本身并不具备SignIn的能力，所以必须通过指定其它SignInScheme交给本地认证来完成 SignIn。对于其父类的HandleAuthenticateAsync抽象方法则定义了一个默认实现：“直接转交给本地验证来处理”。当我们需要定义自己的远程认证方式时，通常只需实现 HandleRemoteAuthenticateAsync 即可，而不用再去处理 HandleAuthenticateAsync 。
+> ***基于声明的认证并不是微软所特有的，它在国外被广泛的使用，如微软的ADFS，Google，Facebook，Twitter等等。在基于声明的认证中，对认证和授权进行了明确的区分，认证用来颁发一个用户的身份标识，其包含这个用户的基本信息，而对于这个身份的颁发则由我们信任的第三方机构来（STS）颁发（当然，你也可以自己来颁发）。而授权，则是通过获取身份标识中的信息，来判断该用户能做什么，不能做什么。***
 
 
