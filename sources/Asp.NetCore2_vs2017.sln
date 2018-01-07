@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webapp", "webapp\webapp.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hosting", "Hosting\Hosting.csproj", "{92A0AEB1-8171-4BD2-8BAE-CF556EA7188A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webauth", "webauth\webauth.csproj", "{FF154666-1188-4DD8-B20E-762A5FC29A50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webauth", "webauth\webauth.csproj", "{FF154666-1188-4DD8-B20E-762A5FC29A50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp4NetCoreHttp", "WebApp4NetCoreHttp\WebApp4NetCoreHttp.csproj", "{5BB260E5-9D96-4207-9A57-5E0FD4272CDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{FF154666-1188-4DD8-B20E-762A5FC29A50}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF154666-1188-4DD8-B20E-762A5FC29A50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF154666-1188-4DD8-B20E-762A5FC29A50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BB260E5-9D96-4207-9A57-5E0FD4272CDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BB260E5-9D96-4207-9A57-5E0FD4272CDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BB260E5-9D96-4207-9A57-5E0FD4272CDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BB260E5-9D96-4207-9A57-5E0FD4272CDE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
