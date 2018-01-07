@@ -15,11 +15,18 @@ namespace WebApp4NetCoreHttp
         public static void Main(string[] args)
         {
             BuildWebHost(args).Run();
+
+
+
         }
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-            
+            .ConfigureAppConfiguration(config =>
+                {
+                    config.AddJsonFile("settings.json");
+                    config.AddCommandLine(args);
+                }) //覆盖默认的配置
                 .UseStartup<Startup>()
                 .Build();
     }

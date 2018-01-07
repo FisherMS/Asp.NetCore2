@@ -1,0 +1,5 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=US-01;Database:NetCore.Demo;User=sa;Password:3.1415926;" 
+  }
+}

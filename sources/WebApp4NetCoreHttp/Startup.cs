@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace WebApp4NetCoreHttp
@@ -18,7 +19,7 @@ namespace WebApp4NetCoreHttp
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env,IConfiguration configuration)
         {
             if (env.IsDevelopment())
             {
@@ -27,8 +28,12 @@ namespace WebApp4NetCoreHttp
 
             app.Run(async (context) =>
             {
-                await context.Response.WriteAsync("Hello World!");
+                await context.Response.WriteAsync(configuration["ConnectionStrings:DefaultConnection"]);
+
+                //await context.Response.WriteAsync("Hello World!");
             });
         }
+
+
     }
 }
