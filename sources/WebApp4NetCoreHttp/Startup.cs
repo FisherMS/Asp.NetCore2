@@ -28,7 +28,7 @@ namespace WebApp4NetCoreHttp
 
             app.Run(async (context) =>
             {
-                await context.Response.WriteAsync(configuration["ConnectionStrings:DefaultConnection"]);
+                await context.Response.WriteAsync($"name={configuration["name"]}\r\n{configuration["ConnectionStrings:DefaultConnection"]}");
 
                 //await context.Response.WriteAsync("Hello World!");
             });
