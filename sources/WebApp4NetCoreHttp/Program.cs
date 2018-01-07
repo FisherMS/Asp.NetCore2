@@ -25,6 +25,7 @@ namespace WebApp4NetCoreHttp
                     config.AddJsonFile("settings.json");//覆盖默认的配置
                     config.AddCommandLine(args);//读取命令行参数
                 })
+            .UseUrls("http://localhost:5000")
                 .UseStartup<Startup>()
                 .Build();
     }
