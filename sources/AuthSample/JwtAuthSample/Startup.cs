@@ -30,7 +30,7 @@ namespace JwtAuthSample
         public void ConfigureServices(IServiceCollection services)
         {
             //读取配置
-            services.Configure<JwtSettings>(Configuration);
+            services.Configure<JwtSettings>(Configuration.GetSection("JwtSettings")); //不能把Configuration直接丢进去，那样的话是拿不到值的。
             var jwtSettings = new JwtSettings();
             Configuration.Bind("JwtSettings",jwtSettings);
             
